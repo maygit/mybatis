@@ -1,0 +1,214 @@
+Mybatis
+ 1.简介 
+     是一个ORM框架。它支持普通SQL查询、存储过程、高级映射
+   Apache组织顶级项目 -->Google--->github
+   ORM框架: hibernate mybatis(ibatis) JPA
+ 2.Mybatis版本
+    ibatis 1.0 2.0
+    mybatis:3.0
+ 3.Mybatis原理
+          实现机制: 使用简单的xml或注解用于配置和搭建映射关系。将接口和java
+          POJO(plain old java Object)映射成数据库中的记录。
+ 4.Mybatis开发环境搭建
+    1)导入jar包   
+      
+    2)创建连接数据库的配置文件
+            文件名: 随便 默认使用 configuration.xml
+            位置: 随意
+           文件内容: dtd文件头
+                            标签
+    3)建立POJO的映射文件
+                文件名:随意  默认:java类名+Mapper.xml  例如: UserMapper.xml
+        文件的位置:随意 一般和java实体类放在同一目录
+        文件内容: 引入dtd文件
+                          标签
+ 5.配置文件
+   1)连接数据库的配置文件
+     <environments default="unit"> 设置默认的环境
+     <environment id="unit">给当前配置文件设置id
+       <transactionManager type="JDBC"></transactionManager>
+        type: JDBC 简单使用jdbc提交数据或回滚  
+              MANAGER:mybaits不负责事务的提交和回滚  将事务交给容器管理。
+       <dataSource type="POOLED"> 
+          type: POOLED 支持数据库连接池     
+                UNPOOLED  不支持数据库连接池
+        <property name="driver" value="${driver}"></property>
+          name:driver,url,username,password
+     <mappers> 用来连接实体类的资源文件
+     <mapper resource="com/entity/UserMapper.xml">  
+       rescoure:实体类配置文件的路径 
+             
+   2)实体类的映射文件
+   	 <mapper namespace="user">  namespace:和实体类同名(首字母小写)
+   	 
+   	 <select id="queryAll" resultType="com.entity.User">
+		select userid id,name,password,age from t_user 
+	</select>
+	 <select>主要用来执行查询语句
+     id:唯一的值  程序中根据id的值获取sql语句 
+     resultType:sql语句执行的结果。
+     parameterType:参数的类型
+ 
+ 
+ 6.MyBatis开发步骤：
+    1)创建一个SqlSessionFactoryBuilder
+		SqlSessionFactoryBuilder sfb = new SqlSessionFactoryBuilder();
+    SqlSessionFactoryBuilder的API
+     SqlSessionFactory   build(Reader reader)加载配置文件使用默认的环境
+       <environments default="unit">  根据default关键字中的值 查找对应运行环境
+     
+     SqlSessionFactory   build(Reader reader, String environment)
+      String environment configuration.xml中<environment>标签id的值
+     
+     SqlSessionFactory build(Reader reader, String environment,、
+     					 Properties properties)
+               将configuration.xml中的配置文件和Properteis中的配置信息合并 产生一个对象。
+       
+         
+    2)创建一个SqlSessionFactory 加载配置文件 
+		InputStream is = TestExample.class.getResourceAsStream("configuration.xml");
+		SqlSessionFactory sf = sfb.build(is);
+   
+    3)创建SqlSession会话
+      SqlSession openSession();获取数据库连接创建会话
+    4)根据实体类的配置文件 发送sql到数据库查找数据。
+      List<User> users =session.selectList("queryAll");
+ 7.SqlsessionFactory 
+      a.二级缓存:
+      b.API
+      SqlSession openSession();建立数据连接并且创建和数据库会话
+ 	  SqlSession openSession(boolean autoCommit);建立会话 并且设置是否是否自动提交
+ 	            boolean: true:自动提交
+ 	                     false:手动提交
+ 	  SqlSession openSession(Connection connection);手动将连接放入到回话中。
+ 	                Connection 数据库连接
+  	  SqlSession openSession(TransactionIsolationLevel level) 设置事务处理级别
+  	    然后创建会话
+  	    TransactionIsolationLevel处理级别
+  	      NONE 无事务
+		  READ_COMMITTED 只读事务  脏读的事务
+		  READ_UNCOMMITTED 读取操作不提交  幻影读写
+		  REPEATABLE_READ 处理重复读写事务   重复读写
+		  SERIALIZABLE    序列化事务 
+      SqlSession openSession(ExecutorType execType);
+         ExecutorType 执行器的类型: SIMPLE 单条SQL
+                                 REUSE  SQL重复执行
+                                 BATCH  批量处理
+ 
+ 8.CRUD
+    1.插入
+      a)API
+      int insert(String id) 根据id查询配置文件中的sql语句 并且执行得到影响的行数
+      int insert(String id,Object obj)
+             根据id 和对象 找到配置文件中的sql语句并且将对象的属性绑定到sql中
+      
+      b)实体映射文件
+        <insert id="insertUser" >
+		  insert into t_user values(5,'tom','12345',20)
+		</insert>
+	
+		<insert id="insertUser1" parameterType="com.entity.User" >
+	  	insert into t_user values(#{id},#{name},#{password},#{age})
+	    </insert>
+	 注意:1)sql中变量的定义规则 #{属性名} 
+ 	
+ 	2.更新
+ 	  1)SqlSession API
+	 	  int update(String)
+	 	  int update(String,Obejct)
+	  2)实体映射文件
+	   <update id="updateName" parameterType="com.entity.User" >
+			update t_user set name=#{name},password=#{password},age=#{age}
+			where userid=#{id}
+	   </update>
+	   parameterType:参数的类型 全限定名:(包名+类型)
+	         String: java.lang.String
+	         int   : int  java.lang.Integer
+	         double :double  java.lang.Double
+	  	     User  : com.entity.User
+ 	3.删除
+ 	  a)API
+ 	   int delete(String id);
+ 	   int delete(String id,Object obj)
+ 	   
+ 	  b)实体映射文件
+	 	<delete id="delete" parameterType="int">
+			delete from t_user where userid = #{id}
+		</delete>
+ 	
+ 	4.查询
+ 	  1)单条记录
+ 	    API: 
+ 	      Object selectOne(String id) 根据id查找sql 然后执行sql获取结果
+ 	      Object selectOne(String id,Object obj) 
+ 	      				根据id查找sql 然后执行sql获取结果
+ 	      				
+ 	  	实体映射文件
+ 	  	  <select id="queryById1" resultType="com.entity.User" >
+			select userid id,name,password,age from t_user where userid=1 
+		  </select>
+		   <select id="queryById" resultType="com.entity.User" parameterType="int">
+			 select userid id,name,password,age from t_user where userid=#{id} 
+		   </select>
+                 注意: resultType:1)select标签中存在
+                        2)select语句得到结果类型  全限定名
+                        3)如果在多表查询中 java中必须存在对应的实体类。	
+             
+             resultMap:1)实现实体类属性和数据库列名之间的映射
+                       2)当查询结果不是一个对象 这个是使用resultMap替代resultType
+             	  
+ 	  2)多条记录
+ 	     a)API
+ 	      List selectList(String statement) 执行sql查询返回结果集
+ 	      List selectList(String statement, Object parameter) 执行sql查询返回结果集
+ 	          List:返回多条记录 转换的对象
+		 b)实体映射文件
+		  <select id="queryByAge" parameterType="int" resultType="com.entity.User" >
+			select userid id,name,password,age from t_user where age = #{age}
+		  </select> 	          
+ 	     
+  9）SqlSession 缓存
+     a)缓存:内存对象   大小
+        SqlSessionFactory  二级缓存
+        SqlSession: 一级缓存  
+           作用：
+       1)将实体映射文件中包含的所有select都会缓存。
+       2)将实体映射文件中所有的insert delete update 缓存。
+       3)存储列表集合(resultMap)或对象(resultType) 最多1024个引用。
+     b)配置缓存 默认情况下缓存未开启
+       <cache readOnly="" flushInterval="" size=""></cache>
+	   readOnly:缓存是否只读
+	              true:只读缓存会给所有的调用者相同的实例对象。  优点:效率高
+	   			  false: 可读写操作会返回缓存对象的拷贝。           优点:安全
+	   				
+	   flushInterval:刷新的频率 1.单位毫秒  2.如果没有设置时间 那么只在调用语句是刷新缓存
+	   size:缓存的大小   1024
+	   eviction:缓存回收策略
+	             LRU 移除最长时间不被使用的对象 (最少)
+	             FIFO 按照对象进入缓存顺序来移除
+	             SOFI 移除基于垃圾回收器的状态和软引用规则的对象
+	             WEAK 更积极的移除基于垃圾回收器的状态和软引用规则的对象
+	 c)作用: 查询 插入 更新 删除
+	   
+ 10)关联查询
+    a)1:1关系  Java类: property:关联关系的属性  javaType:全限定名
+      <resultMap type="com.entity.User" id="userResultMap">
+	      <association property="address" javaType="com.entity.Address" >
+		      <id property="id"  column="addressid"/>
+		      <result property="province"  column="province"/>
+		      <result property="city" column="city"/>
+	      </association>
+      </resultMap>
+    
+    b)1:n关系
+      <resultMap type="com.entity.User" id="userResultMap">
+	      <!--property:属性名  javaType：集合中对象的类型-->
+	      <collection property="account" javaType="com.entity.Account" >
+		      <id property="id"  column="accountid"/>
+		      <result property="money"  column="money"/>
+	      </collection>
+       </resultMap>
+           注意:1)实体类中关联系属性: 集合对象必须创建
+			List<Account> account=new ArrayList<Account>();
+ 
+ 

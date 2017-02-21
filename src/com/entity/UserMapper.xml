@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="user">
+
+	<!-- id:唯一 type:实体的类型 实体类中显示1:1 -->
+    <resultMap type="com.entity.User" id="userResultMap">
+      <!-- 数据库中的主键   property:属性名  column:表中的列名-->
+      <id property="id"  column="userid"/>
+      <!-- result 普通字段-->
+      <result property="name"  column="name"/>
+      <result property="password" column="password"/>
+      <result property="age" column="age"/>
+      <!-- 建立关联关系  association 1:1  collection:1:n -->
+      <!-- association 合并结果集   级联SQL   -->
+      <association property="address" javaType="com.entity.Address" >
+	      <id property="id"  column="addressid"/>
+	      <result property="province"  column="province"/>
+	      <result property="city" column="city"/>
+      </association>
+      <!-- 1:n关系  -->
+      <collection property="account" javaType="com.entity.Account" >
+	      <id property="id"  column="accountid"/>
+	      <result property="money"  column="money"/>
+      </collection>
+      
+    </resultMap>
+   <!-- resultMap:因为表中的字段名和实体类属性名 不同需要手动建立映射关系  
+               如果配置文件中使用resultType MyBatis在调用过程自动创建一个resultMap实现映射
+                      列名  属性名 相同
+      -->
+	<!-- <select id="queryByAddress" parameterType="int" resultMap="userResultMap">
+	  select u.userid id,u.name,u.password,u.age,a.province,a.city
+	    from t_user u inner join t_address a
+        on u.addressid = a.addressid where  u.age = #{age}
+	</select>
+	 -->
+     <select id="queryByAddress" parameterType="int" resultMap="userResultMap">
+	  select u.userid,u.name,u.password,u.age,a.province,a.city,ac.accountid,ac.money
+	    from t_user u inner join t_address a on u.addressid = a.addressid  
+        inner join t_account ac on u.userid = ac.userid  
+        where  u.age = #{age}
+	</select>
+	
+	
+	
+</mapper>
